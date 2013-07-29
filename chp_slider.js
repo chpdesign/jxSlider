@@ -1,9 +1,11 @@
 // ------------------------------------------------------------------------
-// jxSlider 0.3 by Nagy Gergely Alias CHP
+// jxSlider 0.3.1 by Nagy Gergely Alias CHP
 // Minden adattag lehet funkció amely visszatérési értéke a megfelelő adat
 // Pl.: url lehet "" vagy function(){ return ""; }
 // Az összes adattag hozzá van kapcsolva az objektumhoz tehát működik a 
 // $(this) használata.
+// ------------------------------------------------------------------------
+// PARAMETERS
 // ------------------------------------------------------------------------
 // url: "",             	// ajax url
 // type: 'GET',         	// ajax type
@@ -26,8 +28,13 @@
 // start: function(){}, 	// ha elkezte az ajax-ot mi történjen
 // error: function(){}  	// ha hiba volt az ajax-ban akkor ez megy végbe...
 // ------------------------------------------------------------------------
+// METHODS
+// ------------------------------------------------------------------------
+// init						// not important for use
+// jump						// go to a page in the list. Like this ('.selector').jxSlider("jump",2); -> [1,5,7] -> goes to 5
+// ------------------------------------------------------------------------
 (function($) {
-	$.fn.jxSlider = function(opts){
+	$.fn.jxSlider = function(method){
 		var defaults = {
                 url: "",
                 type: 'GET',
@@ -37,7 +44,6 @@
                 async: true,
                 multicall: false,
                 pages: [],
-                random: false,
                 next: ".next",
                 prev: ".prev",
                 prevclick: function(){ return true; },
@@ -45,29 +51,49 @@
                 dataType: 'HTML',
                 hoverPause: true,
                 repeat: true,
+                random: false,
                 interval: 5000,
                 end: function(){},
                 start: function(){},
                 error: function(){}
 		};
-		var options = $.extend({},defaults,opts);
-                function isFunction(functionToCheck) {
-				 var getType = {};
-				 return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
-			}
-                function isString(data){
-                    return typeof data === 'string';
-                }
-		return $(this).each(function(si,elem){
-			var $this = $(elem);
-			var slider_xhr;
+
+        function is_numeric(mixed_var) {
+            return (typeof(mixed_var) === 'number' || typeof(mixed_var) === 'string') && mixed_var !== '' && !isNaN(mixed_var);
+        }
+
+        function isFunction(functionToCheck) {
+            var getType = {};
+            return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+        }
+
+        function isString(data) {
+            return typeof data === 'string';
+        }
+
+        var methods = {
+        		
+    		"jump": function(page){
+    			if(is_numeric(page))
+				return $(this).each(function(si,elem){
+					this.ajax(page);
+				});
+    		},
+        		
+    		"init": function(opts){
+    			var options = this.options = $.extend({},defaults,opts);
+				return $(this).each(function(si,elem){
+					var $this = $(elem);
+					var slider_xhr;
                         var pages = isFunction(options.pages) ? options.pages.apply($this,[]) : options.pages;
                         var page = 0, last_page = 9999;
                         $this.data('jxSliderStop',false);
-                        var ajax = function(way,random){
+                        var ajax = this.ajax = function(way,random){
                             var fdata = isFunction(options.data) ? options.data.apply($this,[]) : options.data;
                             var temp = [];
                             var argument = isFunction(options.argument) ? options.argument.apply($this,[]) : options.argument;
+                            if(is_numeric(way))
+                                page = way;
                             temp[argument] = pages[page];
                             var _url = isFunction(options.url) ? options.url.apply($this,[]) : options.url;
                             var _type = isFunction(options.type) ? options.type.apply($this,[]) : options.type;
@@ -96,7 +122,7 @@
                             }
                             if(last_page != page)
                             {
-	                            if(!options.multicall) if(typeof(slider_xhr) !== 'undefined') slider_xhr.abort();
+                            	if(!options.multicall) if(typeof(slider_xhr) !== 'undefined') slider_xhr.abort();
 	                            slider_xhr = $.ajax({
 	                                type: _type,
 	                                async: isFunction(options.async) ? options.async.apply($this,[]) : options.async,
@@ -108,16 +134,18 @@
 	                                },
 	                                success: function(data){
 	                                	last_page = page;
-	                                	if(typeof(random) == 'undefined' || (typeof(random) != 'undefined' && random === false) )
+	                                	if( typeof(random) == 'undefined' || (typeof(random) != 'undefined' && random === false) )
 	                                	{
-	                                        if(way == 'next')
-	                                            page = page + 1;
-	                                        else if(way == 'prev')
-	                                            page = page - 1;
-	                                        if(page > pages.length-1)
-	                                            page = 0;
-	                                        if(page < 0)
-	                                            page = pages.length-1;
+		                                    if(way == 'next')
+		                                        page = page + 1;
+		                                    else if(way == 'prev')
+		                                        page = page - 1;
+		                                    else if(is_numeric(way))
+		                                        page = 0;
+		                                    if(page > pages.length-1)
+		                                        page = 0;
+		                                    if(page < 0)
+		                                        page = pages.length-1;
 	                                	}
 	                                	else
 	                            		{
@@ -142,33 +170,17 @@
                         if(options.interval > 0)
                         {
 		                    var timer = setInterval(function(){
-		                        jump('next');
+		                    	if(options.hoverPause && $this.data('jxSliderStop') !== true)
+		                    		if(options.random)
+		                    			ajax('next',true);
+		                    		else
+		                    			ajax('next');
+		                    	if(!options.repeat && page == pages.length-1 && options.random === false)
+	                                clearInterval(timer);  
 		                    },options.interval);
 		                    $this.data('jxSliderTimer',timer);
                         }
-                        var jump = function(way,force){
-                            var ajax = $this.data('jxSliderAjax');
-                            if(
-                                    options.hoverPause && 
-                                        (
-                                            $this.data('jxSliderStop') !== true ||
-                                            ( typeof force != 'undefined' && force === true )
-                                        )
-                                )
-                            	{
-	                            	if( typeof force != 'undefined' && force === true )
-	                        		{
-	                            		ajax(way);
-	                        		}
-	                            	else
-	                        		{
-	                            		ajax(way,options.random);
-	                        		}
-                            	}
-                            if(!options.repeat && page == pages.length-1 && options.random === false)
-                                clearInterval(timer);  
-                        };
-                        jump('next');
+                        ajax('next',options.random);
                         $this.on({
                             mouseenter: function(){
                                 $this.data('jxSliderStop',true); 
@@ -183,17 +195,28 @@
                         
                         if(isFunction(options.prev)) options.prev = $(options.prev.apply($this,[]));
                         if(isString(options.prev)) options.prev = $(options.prev,$this);
-			
+
                         $this.on('click' , options.next.selector , function(){
-                            jump('next',true);
+                            ajax('next');
                             if(isFunction(options.nextclick))
                             	return options.nextclick();
                         });
                         $this.on('click', options.prev.selector , function(){
-                            jump('prev',true);
+                            ajax('prev');
                             if(isFunction(options.prevclick))
                             	return options.prevclick();
                         });
-                });
-        };
+				});
+			}
+		}
+    
+        if ( methods[ method ] ) {
+			return methods[ method ].apply( this, Array.prototype.slice.call( arguments, 1 ) );
+		} else if ( typeof method === "object" || ! method ) {
+			return methods.init.apply( this, arguments );
+		} else {
+			$.error( "jQuery.dialogExtend Error : Method <" + method + "> does not exist" );
+		}
+        
+	};
 })(jQuery);
