@@ -1,5 +1,7 @@
 // ------------------------------------------------------------------------
 // jxSlider 0.3.1 by Nagy Gergely Alias CHP
+// https://github.com/chpdesign/jxSlider
+// http://nagygergely.eu/
 // Minden adattag lehet funkció amely visszatérési értéke a megfelelő adat
 // Pl.: url lehet "" vagy function(){ return ""; }
 // Az összes adattag hozzá van kapcsolva az objektumhoz tehát működik a 
