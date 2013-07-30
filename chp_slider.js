@@ -1,7 +1,5 @@
 // ------------------------------------------------------------------------
-// jxSlider 0.3.1 by Nagy Gergely Alias CHP
-// https://github.com/chpdesign/jxSlider
-// http://nagygergely.eu/
+// jxSlider 0.3.2 by Nagy Gergely Alias CHP
 // Minden adattag lehet funkció amely visszatérési értéke a megfelelő adat
 // Pl.: url lehet "" vagy function(){ return ""; }
 // Az összes adattag hozzá van kapcsolva az objektumhoz tehát működik a 
@@ -91,6 +89,31 @@
                         var page = 0, last_page = 9999;
                         $this.data('jxSliderStop',false);
                         var ajax = this.ajax = function(way,random){
+                        	if( typeof(random) == 'undefined' || (typeof(random) != 'undefined' && random === false) )
+                        	{
+                                if(way == 'next')
+                                {
+                                    page = page + 1;
+                                }
+                                else if(way == 'prev')
+                                {
+                                    page = page - 1;
+                                }
+                                else if(is_numeric(way))
+                                    page = 0;
+                                if(page > pages.length-1)
+                                    page = 0;
+                                if(page < 0)
+                                    page = pages.length-1;
+                        	}
+                        	else
+                    		{
+                        		function randomFromInterval(from,to)
+                        		{
+                        		    return Math.floor(Math.random()*(to-from+1)+from);
+                        		}
+                        		page = randomFromInterval(0,pages.length-1);
+                    		}
                             var fdata = isFunction(options.data) ? options.data.apply($this,[]) : options.data;
                             var temp = [];
                             var argument = isFunction(options.argument) ? options.argument.apply($this,[]) : options.argument;
@@ -131,32 +154,11 @@
 	                                dataType: isFunction(options.dataType) ? options.dataType.apply($this,[]) : options.dataType,
 	                                url: _url,
 	                                data: fdata,
-	                                beforeSend: function(data){
-	                                    options.start.apply($this,[data]);
+	                                beforeSend: function(){
+	                                    options.start.apply($this,[]);
 	                                },
 	                                success: function(data){
 	                                	last_page = page;
-	                                	if( typeof(random) == 'undefined' || (typeof(random) != 'undefined' && random === false) )
-	                                	{
-		                                    if(way == 'next')
-		                                        page = page + 1;
-		                                    else if(way == 'prev')
-		                                        page = page - 1;
-		                                    else if(is_numeric(way))
-		                                        page = 0;
-		                                    if(page > pages.length-1)
-		                                        page = 0;
-		                                    if(page < 0)
-		                                        page = pages.length-1;
-	                                	}
-	                                	else
-	                            		{
-	                                		function randomFromInterval(from,to)
-	                                		{
-	                                		    return Math.floor(Math.random()*(to-from+1)+from);
-	                                		}
-	                                		page = randomFromInterval(0,pages.length-1);
-	                            		}
 	                                    options.end.apply($this,[data]);
 	                                },
 	                                error: function(){
